@@ -7,7 +7,7 @@ import { getMediaUrl } from "../../../services/apiConfig";
 
 const { Title, Text, Paragraph } = Typography;
 
-const ProfileHeader = ({ user }) => {
+const ProfileHeader = ({ user, isOwnProfile = false }) => {
   const [uploadModalVisible, setUploadModalVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
@@ -108,17 +108,17 @@ const ProfileHeader = ({ user }) => {
                   borderRadius: "50%",
                   border: "5px solid white",
                   boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                  cursor: "pointer",
+                  cursor: isOwnProfile ? "pointer" : "default",
                   fontSize: "48px",
                 }}
-                onClick={handleAvatarClick}
+                onClick={isOwnProfile ? handleAvatarClick : undefined}
               />
               <div style={{ marginBottom: 8 }}>
                 <Title
                   level={2}
                   style={{ color: "white", margin: 0, fontSize: 28 }}
                 >
-                  {user.name}
+                  {user.firstName} {user.lastName}
                 </Title>
                 <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 16 }}>
                   {user.email}
@@ -134,7 +134,7 @@ const ProfileHeader = ({ user }) => {
             <Col span={16}>
               <div style={{ paddingTop: 20 }}>
                 <Title level={3} style={{ margin: 0, marginBottom: 8 }}>
-                  {user.name}
+                  {user.firstName} {user.lastName}
                 </Title>
                 <Text
                   type="secondary"

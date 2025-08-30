@@ -14,10 +14,23 @@ export const apiCall = async (endpoint, options = {}) => {
 
     try {
         const response = await fetch(url, config);
-        const data = await response.json();
+
+        // Kiểm tra response có content không
+        const responseText = await response.text();
+
+        let data;
+        if (responseText && responseText.trim()) {
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                throw new Error('Response không phải JSON hợp lệ');
+            }
+        } else {
+            data = { success: false, message: 'Response rỗng' };
+        }
 
         if (!response.ok) {
-            throw new Error(data.message || 'Có lỗi xảy ra');
+            throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
         }
 
         return data;

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Layout, Menu, Input, Avatar, Badge, Button, Dropdown } from "antd";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -16,6 +16,7 @@ import {
 import { logout } from "../../services/authService";
 import { useUser } from "../../contexts/UserContext";
 import { getMediaUrl } from "../../services/apiConfig";
+import SearchDropdown from "../common/SearchDropdown";
 
 const { Header, Sider, Content } = Layout;
 const { Search } = Input;
@@ -24,6 +25,8 @@ const MainLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, clearCurrentUser } = useUser();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchVisible, setSearchVisible] = useState(false);
 
   const leftMenuItems = [
     {
@@ -114,9 +117,35 @@ const MainLayout = () => {
             alignItems: "center",
             justifyContent: "center",
             flex: 1,
+            position: "relative",
           }}
         >
-          <Search placeholder="Tìm kiếm..." style={{ width: 500 }} allowClear />
+          <Search
+            placeholder="Tìm kiếm người dùng..."
+            style={{ width: 500 }}
+            allowClear
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setSearchVisible(e.target.value.length > 0);
+            }}
+            onFocus={() => {
+              if (searchTerm.length > 0) setSearchVisible(true);
+            }}
+            onBlur={() => {
+              // Delay để user có thể click vào kết quả
+              setTimeout(() => setSearchVisible(false), 200);
+            }}
+          />
+          <SearchDropdown
+            visible={searchVisible}
+            searchTerm={searchTerm}
+            onUserSelect={(user) => {
+              setSearchTerm("");
+              setSearchVisible(false);
+            }}
+            onClose={() => setSearchVisible(false)}
+          />
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>

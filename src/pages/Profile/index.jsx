@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Layout,
   Avatar,
@@ -30,24 +30,60 @@ import {
 } from "@ant-design/icons";
 import { ProfileHeader, ProfilePostCard } from "./components";
 import { useUser } from "../../contexts/UserContext";
+import { useParams } from "react-router-dom";
+import { getUserById } from "../../services/userService";
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState("posts");
+  const [targetUser, setTargetUser] = useState(null);
+  const [loadingUser, setLoadingUser] = useState(false);
   const { currentUser, loading } = useUser();
+  const { userId } = useParams();
 
-  // Sử dụng thông tin user thật từ context
-  const user = currentUser ? {
-    name: `${currentUser.firstName} ${currentUser.lastName}`,
+  // Nếu có userId trong URL, hiển thị profile của user khác
+  // Nếu không có, hiển thị profile của user hiện tại
+  const isOwnProfile = !userId;
+  const targetUserId = userId || currentUser?.id;
+
+  // Lấy thông tin user cần hiển thị
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (userId && userId !== currentUser?.id) {
+        // Lấy thông tin user khác
+        setLoadingUser(true);
+        try {
+          const userData = await getUserById(userId);
+          setTargetUser(userData);
+        } catch (error) {
+          console.error('Lỗi lấy thông tin user:', error);
+        } finally {
+          setLoadingUser(false);
+        }
+      } else {
+        // Hiển thị profile của chính mình
+        setTargetUser(null);
+      }
+    };
+
+    if (currentUser) {
+      fetchUser();
+    }
+  }, [userId, currentUser]);
+
+  // Sử dụng thông tin user cần hiển thị
+  const user = targetUser || (currentUser ? {
+    firstName: currentUser.firstName,
+    lastName: currentUser.lastName,
     email: currentUser.email,
     phone: currentUser.phone,
     address: currentUser.address,
     dateOfBirth: currentUser.dateOfBirth,
     gender: currentUser.gender,
     profilePictureUrl: currentUser.profilePictureUrl,
-  } : null;
+  } : null);
 
   const posts = [
     {
@@ -139,7 +175,7 @@ const Profile = () => {
   );
 
   // Loading state
-  if (loading) {
+  if (loading || loadingUser) {
     return (
       <div style={{
         display: 'flex',
@@ -171,7 +207,7 @@ const Profile = () => {
   return (
     <div style={{ background: "#f5f5f5", minHeight: "100vh" }}>
       <div style={{ maxWidth: "60%", width: "100%", margin: "0 auto" }}>
-        <ProfileHeader user={user} />
+        <ProfileHeader user={user} isOwnProfile={isOwnProfile} />
         <br />
         {/* Tabs */}
         <div style={{ padding: "0 24px" }}>
@@ -200,7 +236,7 @@ const Profile = () => {
               >
                 <Descriptions column={1} bordered>
                   <Descriptions.Item label="Họ và tên">
-                    {user.name}
+                    {user.firstName} {user.lastName}
                   </Descriptions.Item>
                   <Descriptions.Item label="Email" icon={<MailOutlined />}>
                     {user.email}
