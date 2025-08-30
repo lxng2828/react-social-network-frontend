@@ -314,6 +314,36 @@ Tất cả API đều trả về response theo format `ApiResponse<T>`:
   - `userId`: string (required)
 - **Response**: `200 OK`
 - **Response Body**: `FriendshipStatusResponseDto`
+- **Mô tả**: Kiểm tra trạng thái quan hệ giữa người dùng hiện tại và người dùng khác. Trả về cả trạng thái và ID của mối quan hệ (nếu có).
+
+**Ví dụ Request:**
+```
+GET /api/friendships/status?userId=123e4567-e89b-12d3-a456-426614174000
+```
+
+**Ví dụ Response khi đã là bạn bè:**
+```json
+{
+  "success": true,
+  "message": "Kiểm tra trạng thái quan hệ thành công",
+  "data": {
+    "status": "friends",
+    "friendshipId": "abc-123-def-456"
+  }
+}
+```
+
+**Ví dụ Response khi không có mối quan hệ:**
+```json
+{
+  "success": true,
+  "message": "Kiểm tra trạng thái quan hệ thành công",
+  "data": {
+    "status": "not_friends",
+    "friendshipId": null
+  }
+}
+```
 
 ## 4. Post APIs
 
@@ -909,6 +939,14 @@ Authorization: Bearer {JWT_TOKEN}
 }
 ```
 
+### FriendshipStatusResponseDto
+```json
+{
+  "status": "string",
+  "friendshipId": "string (UUID, null nếu không có mối quan hệ)"
+}
+```
+
 ### IntrospectResponse
 ```json
 {
@@ -988,6 +1026,22 @@ Authorization: Bearer {JWT_TOKEN}
 - `PENDING` - Đang chờ
 - `ACCEPTED` - Đã chấp nhận
 - `REJECTED` - Đã từ chối
+
+### Trạng thái quan hệ trong FriendshipStatusResponseDto
+API `/friendships/status` trả về các trạng thái sau:
+
+| Trạng thái | Mô tả | friendshipId | Hành động có thể thực hiện |
+|------------|--------|---------------|---------------------------|
+| `"friends"` | Hai người dùng đã là bạn bè | ✅ Có ID | - Hủy kết bạn<br>- Xem bài viết riêng tư<br>- Tương tác với bài viết |
+| `"request_sent"` | Người dùng hiện tại đã gửi lời mời kết bạn | ✅ Có ID | - Hủy lời mời kết bạn |
+| `"request_received"` | Người dùng hiện tại đã nhận lời mời kết bạn | ✅ Có ID | - Chấp nhận lời mời<br>- Từ chối lời mời |
+| `"not_friends"` | Không có mối quan hệ nào hoặc đã từ chối | ❌ null | - Gửi lời mời kết bạn |
+
+**Lưu ý**: `friendshipId` có thể được sử dụng trực tiếp với các API khác:
+- Hủy lời mời: `DELETE /api/friendships/{friendshipId}`
+- Chấp nhận: `PATCH /api/friendships/{friendshipId}/accept`
+- Từ chối: `PATCH /api/friendships/{friendshipId}/decline`
+- Hủy kết bạn: `DELETE /api/friendships/{friendshipId}/remove`
 
 ### Validation Rules
 - **Email**: Phải đúng định dạng email

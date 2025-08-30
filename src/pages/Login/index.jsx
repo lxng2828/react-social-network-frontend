@@ -17,6 +17,7 @@ import {
 } from "@ant-design/icons";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { login } from "../../services/authService";
+import { useUser } from "../../contexts/UserContext";
 
 const { Title, Text } = Typography;
 
@@ -24,11 +25,18 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { updateCurrentUser } = useUser();
 
   const onFinish = async (values) => {
     setLoading(true);
     try {
       const response = await login(values.email, values.password);
+
+      // Cập nhật thông tin user vào context
+      if (response.user) {
+        updateCurrentUser(response.user);
+      }
+
       message.success("Đăng nhập thành công!");
 
       // Redirect về trang trước đó hoặc trang chủ

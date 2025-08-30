@@ -1,92 +1,202 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { PostCard } from "../../components/common";
 import { CreatePostForm } from "./components";
+import { EditPostModal } from "../../components/posts";
+import { usePosts } from "../../hooks/usePosts";
+import { useUser } from "../../contexts/UserContext";
+import { Button, Spin, Empty, message } from "antd";
+import { ReloadOutlined } from "@ant-design/icons";
 
 const Home = () => {
-  const posts = [
-    {
-      id: 1,
-      author: "Nguyễn Văn A",
-      avatar: "A",
-      content:
-        "Hôm nay là một ngày tuyệt vời! Vừa hoàn thành xong dự án React mới. Cảm thấy thật sự hài lòng với kết quả. #ReactJS #WebDevelopment #Coding",
-      time: "2 giờ trước",
-      likes: 24,
-      comments: 8,
-      shares: 3,
-      image:
-        "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=600&h=400&fit=crop",
-    },
-    {
-      id: 2,
-      author: "Trần Thị B",
-      avatar: "B",
-      content:
-        "Chia sẻ một số tips về JavaScript mà mình đã học được trong quá trình làm việc. Hy vọng sẽ hữu ích cho các bạn!",
-      time: "4 giờ trước",
-      likes: 15,
-      comments: 12,
-      shares: 5,
-      image:
-        "https://images.unsplash.com/photo-1579468118864-1b9ea3c0db4a?w=600&h=400&fit=crop",
-    },
-    {
-      id: 3,
-      author: "Lê Văn C",
-      avatar: "C",
-      content:
-        "Vừa tham gia workshop về AI/ML. Thật sự thú vị và mở mang tầm mắt về tương lai của công nghệ! #AI #MachineLearning #Tech",
-      time: "6 giờ trước",
-      likes: 31,
-      comments: 15,
-      shares: 7,
-      image:
-        "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=400&fit=crop",
-    },
-    {
-      id: 4,
-      author: "Phạm Thị D",
-      avatar: "D",
-      content:
-        "Cuối tuần này đi du lịch cùng gia đình. Cảnh đẹp quá! #Travel #Weekend #Family",
-      time: "8 giờ trước",
-      likes: 42,
-      comments: 18,
-      shares: 9,
-      image:
-        "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop",
-    },
-    {
-      id: 5,
-      author: "Hoàng Văn E",
-      avatar: "E",
-      content:
-        "Vừa hoàn thành khóa học về UI/UX Design. Thiết kế đẹp thật sự rất quan trọng! #Design #UI #UX",
-      time: "10 giờ trước",
-      likes: 28,
-      comments: 14,
-      shares: 6,
-      image:
-        "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=600&h=400&fit=crop",
-    },
-  ];
+  // Sử dụng usePosts() không có userId để lấy feed bài viết chung
+  const { posts, loading, error, hasMore, fetchPosts, addPost, updatePostById, deletePostById, refreshPosts, loadMorePosts } = usePosts();
+  const { currentUser } = useUser();
+  const [refreshing, setRefreshing] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
 
-  const handleCreatePost = (content) => {
-    console.log("Tạo bài viết mới:", content);
-    // Xử lý tạo bài viết ở đây
+  // Lấy danh sách bài viết khi component mount
+  useEffect(() => {
+    if (currentUser) {
+      fetchPosts(1);
+    }
+  }, [currentUser, fetchPosts]);
+
+  const handleCreatePost = async (postData) => {
+    try {
+      await addPost(postData);
+      message.success("Đăng bài viết thành công!");
+      // Refresh để lấy bài viết mới nhất
+      refreshPosts();
+    } catch (error) {
+      message.error("Có lỗi xảy ra khi đăng bài viết!");
+      console.error("Lỗi tạo bài viết:", error);
+    }
   };
 
+  const handleDeletePost = async (postId) => {
+    try {
+      await deletePostById(postId);
+      message.success("Xóa bài viết thành công!");
+    } catch (error) {
+      message.error("Có lỗi xảy ra khi xóa bài viết!");
+      console.error("Lỗi xóa bài viết:", error);
+    }
+  };
+
+  const handleEditPost = (post) => {
+    setEditingPost(post);
+    setEditModalVisible(true);
+  };
+
+  const handleSaveEdit = async (postData) => {
+    if (!editingPost) return;
+
+    try {
+      setEditLoading(true);
+      await updatePostById(editingPost.id, postData);
+      message.success("Chỉnh sửa bài viết thành công!");
+      setEditModalVisible(false);
+      setEditingPost(null);
+      refreshPosts();
+    } catch (error) {
+      message.error("Có lỗi xảy ra khi chỉnh sửa bài viết!");
+      console.error("Lỗi chỉnh sửa bài viết:", error);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditModalVisible(false);
+    setEditingPost(null);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refreshPosts();
+      message.success("Làm mới thành công!");
+    } catch (error) {
+      message.error("Có lỗi xảy ra khi làm mới!");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleLoadMore = () => {
+    if (hasMore && !loading) {
+      loadMorePosts();
+    }
+  };
+
+  // Loading state
+  if (loading && posts.length === 0) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '50vh'
+      }}>
+        <Spin size="large" tip="Đang tải bài viết..." />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error && posts.length === 0) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '50vh',
+        gap: '16px'
+      }}>
+        <div style={{ color: '#ff4d4f', fontSize: '16px' }}>
+          Có lỗi xảy ra: {error}
+        </div>
+        <Button
+          type="primary"
+          icon={<ReloadOutlined />}
+          onClick={handleRefresh}
+        >
+          Thử lại
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ maxWidth: "60%", width: "100%", margin: "0 auto" }}>
+    <div style={{ maxWidth: "80%", width: "100%", margin: "0 auto" }}>
       {/* Create Post Form */}
-      <CreatePostForm onSubmit={handleCreatePost} />
+      <CreatePostForm
+        onSubmit={handleCreatePost}
+        onSuccess={refreshPosts}
+      />
 
       {/* Posts Feed */}
       <div>
-        {posts.map((post) => (
-          <PostCard key={post.id} post={post} />
-        ))}
+        {/* Refresh Button */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          marginBottom: '16px'
+        }}>
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={handleRefresh}
+            loading={refreshing}
+          >
+            Làm mới
+          </Button>
+        </div>
+
+        {/* Posts List */}
+        {posts.length > 0 ? (
+          <>
+            {posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onEdit={handleEditPost}
+                onDelete={handleDeletePost}
+                onRefresh={refreshPosts}
+              />
+            ))}
+
+            {/* Load More Button */}
+            {hasMore && (
+              <div style={{ textAlign: 'center', margin: '24px 0' }}>
+                <Button
+                  onClick={handleLoadMore}
+                  loading={loading}
+                  size="large"
+                >
+                  {loading ? 'Đang tải...' : 'Tải thêm bài viết'}
+                </Button>
+              </div>
+            )}
+          </>
+        ) : (
+          <Empty
+            description="Chưa có bài viết nào"
+            style={{ margin: '40px 0' }}
+          />
+        )}
       </div>
+
+      {/* Edit Post Modal */}
+      <EditPostModal
+        visible={editModalVisible}
+        post={editingPost}
+        onCancel={handleCancelEdit}
+        onSave={handleSaveEdit}
+        loading={editLoading}
+      />
     </div>
   );
 };

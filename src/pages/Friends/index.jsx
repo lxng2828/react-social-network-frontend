@@ -1,189 +1,148 @@
-import React, { useState } from "react";
-import { List, Typography, Badge, Tabs } from "antd";
-import { UserAddOutlined } from "@ant-design/icons";
-import { SearchInput, EmptyState } from "../../components/common";
+import React, { useState, useEffect } from "react";
+import { Typography, Tabs, Empty, Spin, message, Input, Space, Button } from "antd";
+import { UserOutlined, TeamOutlined, UserAddOutlined } from "@ant-design/icons";
 import {
-  FriendItem,
-  FriendRequestItem,
-  FriendSuggestionItem,
-} from "./components";
+  getFriendsList,
+  getFriendRequests,
+  acceptFriendRequest,
+  declineFriendRequest,
+  removeFriend
+} from "../../services/friendshipService";
+import { useUser } from "../../contexts/UserContext";
 
 const { Text, Title } = Typography;
+const { Search } = Input;
 
 const Friends = () => {
-  const [activeTab, setActiveTab] = useState("all");
+  const [activeTab, setActiveTab] = useState("friends");
   const [searchText, setSearchText] = useState("");
+  const [friends, setFriends] = useState([]);
+  const [friendRequests, setFriendRequests] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [acceptingRequest, setAcceptingRequest] = useState(null);
+  const [decliningRequest, setDecliningRequest] = useState(null);
+  const [removingFriend, setRemovingFriend] = useState(null);
 
-  const friends = [
-    {
-      id: 1,
-      name: "Nguyễn Văn A",
-      avatar: "A",
-      status: "online",
-      mutualFriends: 15,
-      lastSeen: "2 phút trước",
-      type: "friend",
-    },
-    {
-      id: 2,
-      name: "Trần Thị B",
-      avatar: "B",
-      status: "offline",
-      mutualFriends: 8,
-      lastSeen: "1 giờ trước",
-      type: "friend",
-    },
-    {
-      id: 3,
-      name: "Lê Văn C",
-      avatar: "C",
-      status: "online",
-      mutualFriends: 12,
-      lastSeen: "5 phút trước",
-      type: "friend",
-    },
-    {
-      id: 4,
-      name: "Phạm Thị D",
-      avatar: "D",
-      status: "offline",
-      mutualFriends: 20,
-      lastSeen: "1 ngày trước",
-      type: "friend",
-    },
-  ];
+  const { currentUser } = useUser();
 
-  const friendRequests = [
-    {
-      id: 5,
-      name: "Hoàng Văn E",
-      avatar: "E",
-      mutualFriends: 5,
-      requestTime: "2 giờ trước",
-      type: "request",
-    },
-    {
-      id: 6,
-      name: "Vũ Thị F",
-      avatar: "F",
-      mutualFriends: 10,
-      requestTime: "1 ngày trước",
-      type: "request",
-    },
-  ];
+  // Lấy danh sách bạn bè
+  const fetchFriends = async () => {
+    if (activeTab !== "friends") return;
 
-  const suggestions = [
-    {
-      id: 7,
-      name: "Đặng Văn G",
-      avatar: "G",
-      mutualFriends: 8,
-      type: "suggestion",
-    },
-    {
-      id: 8,
-      name: "Bùi Thị H",
-      avatar: "H",
-      mutualFriends: 12,
-      type: "suggestion",
-    },
-    {
-      id: 9,
-      name: "Ngô Văn I",
-      avatar: "I",
-      mutualFriends: 6,
-      type: "suggestion",
-    },
-  ];
-
-  const handleAcceptRequest = (id) => {
-    console.log("Chấp nhận lời mời:", id);
-  };
-
-  const handleRejectRequest = (id) => {
-    console.log("Từ chối lời mời:", id);
-  };
-
-  const handleAddFriend = (id) => {
-    console.log("Gửi lời mời kết bạn:", id);
-  };
-
-  const handleMessage = (id) => {
-    console.log("Nhắn tin với:", id);
-  };
-
-  const getFilteredData = () => {
-    let data = [];
-    switch (activeTab) {
-      case "friends":
-        data = friends;
-        break;
-      case "requests":
-        data = friendRequests;
-        break;
-      case "suggestions":
-        data = suggestions;
-        break;
-      default:
-        data = [...friends, ...friendRequests, ...suggestions];
+    setLoading(true);
+    try {
+      const response = await getFriendsList(1, 20); // page bắt đầu từ 1
+      setFriends(response.content || []);
+    } catch (error) {
+      message.error('Không thể tải danh sách bạn bè');
+      console.error('Lỗi tải bạn bè:', error);
+    } finally {
+      setLoading(false);
     }
-
-    if (searchText) {
-      data = data.filter((item) =>
-        item.name.toLowerCase().includes(searchText.toLowerCase())
-      );
-    }
-
-    return data;
   };
 
-  const renderItem = (item) => {
-    switch (item.type) {
-      case "friend":
-        return (
-          <FriendItem key={item.id} friend={item} onMessage={handleMessage} />
-        );
-      case "request":
-        return (
-          <FriendRequestItem
-            key={item.id}
-            request={item}
-            onAccept={handleAcceptRequest}
-            onReject={handleRejectRequest}
-          />
-        );
-      case "suggestion":
-        return (
-          <FriendSuggestionItem
-            key={item.id}
-            suggestion={item}
-            onAddFriend={handleAddFriend}
-          />
-        );
-      default:
-        return null;
+  // Lấy danh sách lời mời kết bạn
+  const fetchFriendRequests = async () => {
+    if (activeTab !== "requests") return;
+
+    setLoadingRequests(true);
+    try {
+      const response = await getFriendRequests(1, 20); // page bắt đầu từ 1
+      setFriendRequests(response.content || []);
+    } catch (error) {
+      message.error('Không thể tải danh sách lời mời kết bạn');
+      console.error('Lỗi tải lời mời:', error);
+    } finally {
+      setLoadingRequests(false);
     }
+  };
+
+  useEffect(() => {
+    if (activeTab === "friends") {
+      fetchFriends();
+    } else if (activeTab === "requests") {
+      fetchFriendRequests();
+    }
+  }, [activeTab]);
+
+  // Xử lý chấp nhận lời mời kết bạn
+  const handleAcceptRequest = async (requestId) => {
+    setAcceptingRequest(requestId);
+    try {
+      await acceptFriendRequest(requestId);
+      message.success('Đã chấp nhận lời mời kết bạn!');
+      // Cập nhật danh sách
+      fetchFriendRequests();
+      fetchFriends(); // Cập nhật danh sách bạn bè
+    } catch (error) {
+      message.error('Không thể chấp nhận lời mời kết bạn');
+    } finally {
+      setAcceptingRequest(null);
+    }
+  };
+
+  // Xử lý từ chối lời mời kết bạn
+  const handleDeclineRequest = async (requestId) => {
+    setDecliningRequest(requestId);
+    try {
+      await declineFriendRequest(requestId);
+      message.success('Đã từ chối lời mời kết bạn!');
+      // Cập nhật danh sách
+      fetchFriendRequests();
+    } catch (error) {
+      message.error('Không thể từ chối lời mời kết bạn');
+    } finally {
+      setDecliningRequest(null);
+    }
+  };
+
+  // Xử lý hủy kết bạn
+  const handleRemoveFriend = async (friendId) => {
+    setRemovingFriend(friendId);
+    try {
+      await removeFriend(friendId);
+      message.success('Đã hủy kết bạn!');
+      // Cập nhật danh sách
+      fetchFriends();
+    } catch (error) {
+      message.error('Không thể hủy kết bạn');
+    } finally {
+      setRemovingFriend(null);
+    }
+  };
+
+  // Xử lý nhắn tin
+  const handleMessage = (friend) => {
+    message.info(`Chức năng nhắn tin với ${friend.firstName} ${friend.lastName} sẽ được phát triển sau`);
+  };
+
+  // Filter dữ liệu theo search
+  const getFilteredFriends = () => {
+    if (!searchText) return friends;
+    return friends.filter(friend =>
+      `${friend.firstName} ${friend.lastName}`.toLowerCase().includes(searchText.toLowerCase()) ||
+      friend.email.toLowerCase().includes(searchText.toLowerCase())
+    );
+  };
+
+  const getFilteredRequests = () => {
+    if (!searchText) return friendRequests;
+    return friendRequests.filter(request =>
+      `${request.firstName} ${request.lastName}`.toLowerCase().includes(searchText.toLowerCase()) ||
+      request.email.toLowerCase().includes(searchText.toLowerCase())
+    );
   };
 
   const items = [
     {
-      key: "all",
-      label: (
-        <span>
-          Tất cả
-          <Badge
-            count={friends.length + friendRequests.length + suggestions.length}
-            style={{ marginLeft: 8 }}
-          />
-        </span>
-      ),
-    },
-    {
       key: "friends",
       label: (
         <span>
-          Bạn bè
-          <Badge count={friends.length} style={{ marginLeft: 8 }} />
+          <TeamOutlined /> Bạn bè
+          <span style={{ marginLeft: 8, color: '#666' }}>
+            ({friends.length})
+          </span>
         </span>
       ),
     },
@@ -191,23 +150,11 @@ const Friends = () => {
       key: "requests",
       label: (
         <span>
-          Lời mời kết bạn
-          <Badge count={friendRequests.length} style={{ marginLeft: 8 }} />
-        </span>
-      ),
-    },
-    {
-      key: "suggestions",
-      label: (
-        <span>
-          Gợi ý
-          <Badge count={suggestions.length} style={{ marginLeft: 8 }} />
+          <UserAddOutlined /> Lời mời kết bạn
         </span>
       ),
     },
   ];
-
-  const filteredData = getFilteredData();
 
   return (
     <div
@@ -227,10 +174,12 @@ const Friends = () => {
         </Text>
       </div>
 
-      <SearchInput
+      <Search
         placeholder="Tìm kiếm bạn bè..."
         value={searchText}
         onChange={(e) => setSearchText(e.target.value)}
+        style={{ marginBottom: "16px" }}
+        allowClear
       />
 
       <Tabs
@@ -240,13 +189,117 @@ const Friends = () => {
         style={{ marginBottom: "16px" }}
       />
 
-      <List dataSource={filteredData} renderItem={renderItem} />
+      {activeTab === "friends" && (
+        <div>
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "40px" }}>
+              <Spin size="large" />
+              <div style={{ marginTop: "16px" }}>Đang tải danh sách bạn bè...</div>
+            </div>
+          ) : getFilteredFriends().length > 0 ? (
+            getFilteredFriends().map(friend => (
+              <div key={friend.id} style={{
+                padding: "16px",
+                border: "1px solid #f0f0f0",
+                borderRadius: "8px",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "16px"
+              }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: "bold", fontSize: "16px" }}>
+                    {friend.firstName} {friend.lastName}
+                  </div>
+                  <div style={{ color: "#666" }}>{friend.email}</div>
+                </div>
+                <Space>
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => handleMessage(friend)}
+                  >
+                    Nhắn tin
+                  </Button>
+                  <Button
+                    danger
+                    size="small"
+                    loading={removingFriend === friend.friendshipId}
+                    onClick={() => handleRemoveFriend(friend.friendshipId)}
+                  >
+                    Hủy kết bạn
+                  </Button>
+                </Space>
+              </div>
+            ))
+          ) : (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={
+                searchText
+                  ? "Không tìm thấy bạn bè nào phù hợp"
+                  : "Bạn chưa có bạn bè nào"
+              }
+            />
+          )}
+        </div>
+      )}
 
-      {filteredData.length === 0 && (
-        <EmptyState
-          icon={<UserAddOutlined />}
-          title={searchText ? "Không tìm thấy bạn bè nào" : "Không có dữ liệu"}
-        />
+      {activeTab === "requests" && (
+        <div>
+          {loadingRequests ? (
+            <div style={{ textAlign: "center", padding: "40px" }}>
+              <Spin size="large" />
+              <div style={{ marginTop: "16px" }}>Đang tải lời mời kết bạn...</div>
+            </div>
+          ) : getFilteredRequests().length > 0 ? (
+            getFilteredRequests().map(request => (
+              <div key={request.id} style={{
+                padding: "16px",
+                border: "1px solid #f0f0f0",
+                borderRadius: "8px",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "16px"
+              }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: "bold", fontSize: "16px" }}>
+                    {request.firstName} {request.lastName}
+                  </div>
+                  <div style={{ color: "#666" }}>{request.email}</div>
+                </div>
+                <Space>
+                  <Button
+                    type="primary"
+                    size="small"
+                    loading={acceptingRequest === request.friendshipId}
+                    onClick={() => handleAcceptRequest(request.friendshipId)}
+                  >
+                    Chấp nhận
+                  </Button>
+                  <Button
+                    danger
+                    size="small"
+                    loading={decliningRequest === request.friendshipId}
+                    onClick={() => handleDeclineRequest(request.friendshipId)}
+                  >
+                    Từ chối
+                  </Button>
+                </Space>
+              </div>
+            ))
+          ) : (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={
+                searchText
+                  ? "Không tìm thấy lời mời nào phù hợp"
+                  : "Không có lời mời kết bạn nào"
+              }
+            />
+          )}
+        </div>
       )}
     </div>
   );
