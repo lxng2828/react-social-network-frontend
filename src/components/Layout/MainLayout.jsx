@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Layout, Menu, Input, Avatar, Badge, Button, Dropdown } from "antd";
+import { Layout, Menu, Input, Avatar, Badge, Button, Dropdown, Spin, Alert } from "antd";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   HomeOutlined,
@@ -12,11 +12,14 @@ import {
   SearchOutlined,
   PlusOutlined,
   LogoutOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import { logout } from "../../services/authService";
 import { useUser } from "../../contexts/UserContext";
 import { getMediaUrl } from "../../utils/mediaUtils";
 import SearchDropdown from "../common/SearchDropdown";
+import { useHashtags, useFriends } from "../../hooks";
+import { SettingsModal } from "../settings";
 
 const { Header, Sider, Content } = Layout;
 const { Search } = Input;
@@ -27,6 +30,13 @@ const MainLayout = () => {
   const { currentUser, clearCurrentUser } = useUser();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchVisible, setSearchVisible] = useState(false);
+  const [settingsModalVisible, setSettingsModalVisible] = useState(false);
+
+  // Sử dụng useHashtags hook để lấy dữ liệu hashtag xu hướng
+  const { hashtags, loading: hashtagsLoading, error: hashtagsError, refreshHashtags } = useHashtags();
+
+  // Sử dụng useFriends hook để lấy danh sách bạn bè thật
+  const { friends, loading: friendsLoading, error: friendsError, refreshFriends } = useFriends(10);
 
   const leftMenuItems = [
     {
@@ -78,7 +88,7 @@ const MainLayout = () => {
       key: "settings",
       icon: <SettingOutlined />,
       label: "Cài đặt",
-      onClick: () => navigate("/settings"),
+      onClick: () => setSettingsModalVisible(true),
     },
     {
       type: "divider",
@@ -233,37 +243,73 @@ const MainLayout = () => {
           <div style={{ padding: "24px" }}>
             <h3>Bạn bè của tôi</h3>
             <div style={{ marginBottom: "24px" }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  marginBottom: "8px",
-                }}
-              >
-                <Avatar size="small" icon={<UserOutlined />} />
-                <span>Nguyễn Văn A</span>
-              </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  marginBottom: "8px",
-                }}
-              >
-                <Avatar size="small" icon={<UserOutlined />} />
-                <span>Trần Thị B</span>
-              </div>
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "8px" }}
-              >
-                <Avatar size="small" icon={<UserOutlined />} />
-                <span>Lê Văn C</span>
-              </div>
+              {friendsLoading ? (
+                <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                  <Spin size="small" />
+                  <div style={{ marginTop: '8px', fontSize: '12px', color: '#666' }}>
+                    Đang tải danh sách bạn bè...
+                  </div>
+                </div>
+              ) : friendsError ? (
+                <div style={{ marginBottom: '16px' }}>
+                  <Alert
+                    message="Không thể tải danh sách bạn bè"
+                    description={friendsError}
+                    type="error"
+                    showIcon
+                    size="small"
+                    action={
+                      <Button
+                        size="small"
+                        icon={<ReloadOutlined />}
+                        onClick={refreshFriends}
+                        type="link"
+                      >
+                        Thử lại
+                      </Button>
+                    }
+                  />
+                </div>
+              ) : friends && friends.length > 0 ? (
+                friends.map((friend) => (
+                  <div
+                    key={friend.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      marginBottom: "8px",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => navigate(`/profile/${friend.id}`)}
+                  >
+                    <Avatar
+                      size="small"
+                      src={friend.profilePictureUrl ? getMediaUrl(friend.profilePictureUrl) : undefined}
+                      icon={!friend.profilePictureUrl ? <UserOutlined /> : undefined}
+                    />
+                    <span style={{ fontSize: '13px' }}>
+                      {friend.firstName} {friend.lastName}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px 0', color: '#666' }}>
+                  <div style={{ fontSize: '12px' }}>Chưa có bạn bè nào</div>
+                  <Button
+                    size="small"
+                    icon={<ReloadOutlined />}
+                    onClick={refreshFriends}
+                    type="link"
+                    style={{ marginTop: '4px' }}
+                  >
+                    Làm mới
+                  </Button>
+                </div>
+              )}
             </div>
 
-            <h3>Xu hướng</h3>
+            {/* <h3>Xu hướng</h3>
             <div>
               <div style={{ marginBottom: "8px" }}>
                 <span style={{ color: "#1890ff" }}>#ReactJS</span>
@@ -283,10 +329,14 @@ const MainLayout = () => {
                   543 bài viết
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </Sider>
       </Layout>
+      <SettingsModal
+        visible={settingsModalVisible}
+        onCancel={() => setSettingsModalVisible(false)}
+      />
     </Layout>
   );
 };

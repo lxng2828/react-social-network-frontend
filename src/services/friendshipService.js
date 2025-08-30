@@ -157,35 +157,21 @@ export const removeFriend = async (friendshipId) => {
 };
 
 // Lấy danh sách bạn bè
-export const getFriendsList = async (page = 1, size = 20) => {
+export const getFriendsList = async (page = 1, limit = 10) => {
     try {
-        console.log('🔄 Gọi API getFriendsList:', `/friendships?page=${page}&limit=${size}`);
+        console.log('🔄 Lấy danh sách bạn bè:', { page, limit });
 
-        const response = await apiCall(`/friendships?page=${page}&limit=${size}`, {
+        const params = new URLSearchParams();
+        params.append('page', page);
+        params.append('limit', limit);
+
+        const response = await apiCall(`/friendships?${params}`, {
+            method: 'GET',
             headers: getAuthHeader()
         });
 
         console.log('✅ Response getFriendsList:', response);
-
-        // API trả về Page<FriendResponseDto>
-        // FriendResponseDto: { id, friend: UserResponseDto, acceptedAt }
-        // Cần map để lấy thông tin user từ field 'friend'
-        if (response.data && response.data.content) {
-            const mappedFriends = response.data.content.map(friendResponse => ({
-                ...friendResponse.friend, // Lấy thông tin user
-                friendshipId: friendResponse.id, // Giữ lại ID của friendship để xóa
-                acceptedAt: friendResponse.acceptedAt
-            }));
-
-            console.log('🔄 Mapped friends:', mappedFriends);
-
-            return {
-                ...response.data,
-                content: mappedFriends
-            };
-        }
-
-        return response.data;
+        return response.data || response;
     } catch (error) {
         console.error('❌ Lỗi getFriendsList:', error);
         throw error;

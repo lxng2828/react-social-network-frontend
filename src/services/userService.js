@@ -10,16 +10,24 @@ const getAuthHeader = () => {
 const apiCall = async (endpoint, options = {}) => {
     const url = `${API_BASE_URL}${endpoint}`;
 
+    // Lấy auth headers
+    const authHeaders = getAuthHeader();
+
     const config = {
         headers: {
             'Content-Type': 'application/json',
-            ...options.headers,
+            ...authHeaders, // Merge auth headers trước
+            ...options.headers, // Sau đó merge options headers
         },
         ...options,
     };
 
+    console.log('🚀 UserService - API Call:', { url, method: options.method, headers: config.headers, body: config.body });
+
     try {
         const response = await fetch(url, config);
+
+        console.log('📡 UserService - Response Status:', { status: response.status, statusText: response.statusText });
 
         // Kiểm tra response có content không
         const responseText = await response.text();
@@ -29,11 +37,14 @@ const apiCall = async (endpoint, options = {}) => {
             try {
                 data = JSON.parse(responseText);
             } catch (parseError) {
+                console.error('💥 UserService - JSON Parse Error:', parseError);
                 throw new Error('Response không phải JSON hợp lệ');
             }
         } else {
             data = { success: false, message: 'Response rỗng' };
         }
+
+        console.log('📡 UserService - Response Data:', data);
 
         if (!response.ok) {
             throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
@@ -41,6 +52,7 @@ const apiCall = async (endpoint, options = {}) => {
 
         return data;
     } catch (error) {
+        console.error('💥 UserService - API Call Error:', error);
         throw error;
     }
 };
@@ -97,14 +109,67 @@ export const updateProfile = async (profileData) => {
     const token = localStorage.getItem('jwt_token');
     if (!token) throw new Error('Không có token');
 
-    const response = await apiCall('/users/profile', {
-        method: 'PUT',
-        headers: getAuthHeader(),
-        body: JSON.stringify(profileData),
-    });
+    console.log('👤 UserService - Updating profile:', profileData);
+    console.log('🔍 UserService: dateOfBirth type:', typeof profileData.dateOfBirth);
+    console.log('🔍 UserService: dateOfBirth value:', profileData.dateOfBirth);
+    console.log('🔍 UserService: dateOfBirth is dayjs?', profileData.dateOfBirth && profileData.dateOfBirth.format ? 'YES' : 'NO');
 
-    // Theo API spec: response.data chứa UserResponseDto
-    return response.data;
+    // Đảm bảo date format đúng yyyy-MM-dd
+    const requestData = {
+        ...profileData,
+        dateOfBirth: profileData.dateOfBirth ?
+            (typeof profileData.dateOfBirth === 'string' ? profileData.dateOfBirth : profileData.dateOfBirth.format('YYYY-MM-DD'))
+            : undefined
+    };
+
+    console.log('👤 UserService - Request data:', requestData);
+
+    try {
+        const response = await apiCall('/users/profile', {
+            method: 'PUT',
+            headers: {
+                ...getAuthHeader(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData),
+        });
+
+        console.log('✅ UserService - Profile updated successfully:', response);
+
+        // Theo API spec: response.data chứa UserResponseDto
+        return response.data;
+    } catch (error) {
+        console.error('💥 UserService - Error updating profile:', error);
+        throw error;
+    }
+};
+
+// Đổi mật khẩu
+export const changePassword = async (passwordData) => {
+    const token = localStorage.getItem('jwt_token');
+    if (!token) throw new Error('Không có token');
+
+    console.log('🔐 UserService - Changing password...');
+    console.log('🔐 UserService - Password data:', passwordData);
+
+    try {
+        const response = await apiCall('/users/change-password', {
+            method: 'PUT',
+            headers: {
+                ...getAuthHeader(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(passwordData),
+        });
+
+        console.log('✅ UserService - Password changed successfully:', response);
+
+        // Theo API spec: response.data chứa UserResponseDto
+        return response.data;
+    } catch (error) {
+        console.error('💥 UserService - Error changing password:', error);
+        throw error;
+    }
 };
 
 // Tìm kiếm người dùng
