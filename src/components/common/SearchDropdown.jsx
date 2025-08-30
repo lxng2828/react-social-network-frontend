@@ -3,7 +3,7 @@ import { List, Avatar, Spin, Empty } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { searchUsers } from '../../services/userService';
-import { getMediaUrl } from '../../services/apiConfig';
+import { getMediaUrl } from '../../utils/mediaUtils';
 import { useUser } from '../../contexts/UserContext';
 
 const SearchDropdown = ({ visible, searchTerm, onUserSelect, onClose }) => {

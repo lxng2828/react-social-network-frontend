@@ -3,7 +3,8 @@ import { Typography, Card, Row, Col, Button, Space, Tag, Image, Avatar, Modal, U
 import { UserOutlined, CameraOutlined, TeamOutlined, UploadOutlined } from "@ant-design/icons";
 import { uploadProfilePicture } from "../../../services/userService";
 import { useUser } from "../../../contexts/UserContext";
-import { getMediaUrl } from "../../../services/apiConfig";
+import { getMediaUrl } from "../../../utils/mediaUtils";
+import FriendshipActions from "../../../components/common/FriendshipActions";
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -12,7 +13,7 @@ const ProfileHeader = ({ user, isOwnProfile = false }) => {
   const [uploading, setUploading] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
-  const { refreshUser } = useUser();
+  const { refreshUser, currentUser } = useUser();
 
   const handleAvatarClick = () => {
     setUploadModalVisible(true);
@@ -143,44 +144,7 @@ const ProfileHeader = ({ user, isOwnProfile = false }) => {
                   {user.email}
                 </Text>
 
-                <Space wrap size="middle">
-                  <Tag
-                    icon={<UserOutlined />}
-                    style={{
-                      padding: "8px 16px",
-                      fontSize: 14,
-                      borderRadius: 20,
-                      border: "1px solid #e8e8e8",
-                      background: "#f8f9fa",
-                    }}
-                  >
-                    Lập trình viên
-                  </Tag>
-                  <Tag
-                    icon={<CameraOutlined />}
-                    style={{
-                      padding: "8px 16px",
-                      fontSize: 14,
-                      borderRadius: 20,
-                      border: "1px solid #e8e8e8",
-                      background: "#f8f9fa",
-                    }}
-                  >
-                    Nhiếp ảnh
-                  </Tag>
-                  <Tag
-                    icon={<TeamOutlined />}
-                    style={{
-                      padding: "8px 16px",
-                      fontSize: 14,
-                      borderRadius: 20,
-                      border: "1px solid #e8e8e8",
-                      background: "#f8f9fa",
-                    }}
-                  >
-                    Du lịch
-                  </Tag>
-                </Space>
+                {/* Bỏ các tags hardcode không có thật */}
               </div>
             </Col>
             <Col span={8}>
@@ -192,11 +156,15 @@ const ProfileHeader = ({ user, isOwnProfile = false }) => {
                   borderLeft: "1px solid #f0f0f0",
                 }}
               >
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ color: "#666", fontSize: 14 }}>
-                    Thông tin cá nhân
-                  </div>
-                </div>
+                {/* Component Friendship Actions */}
+                <FriendshipActions
+                  targetUserId={user?.id}
+                  isOwnProfile={isOwnProfile}
+                  currentUserId={currentUser?.id}
+                  onFriendshipChange={(status) => {
+                    console.log('Friendship status changed:', status);
+                  }}
+                />
               </div>
             </Col>
           </Row>

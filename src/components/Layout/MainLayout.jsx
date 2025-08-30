@@ -15,7 +15,7 @@ import {
 } from "@ant-design/icons";
 import { logout } from "../../services/authService";
 import { useUser } from "../../contexts/UserContext";
-import { getMediaUrl } from "../../services/apiConfig";
+import { getMediaUrl } from "../../utils/mediaUtils";
 import SearchDropdown from "../common/SearchDropdown";
 
 const { Header, Sider, Content } = Layout;
