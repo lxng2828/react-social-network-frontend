@@ -56,7 +56,15 @@ const PostCard = ({ post, onRefresh, onEdit, onDelete }) => {
   // Sử dụng useComments hook
   const {
     addComment,
-    refreshComments
+    refreshComments,
+    comments,
+    loading,
+    error,
+    hasMore,
+    fetchComments,
+    updateCommentById,
+    deleteCommentById,
+    loadMoreComments
   } = useComments(post.id);
 
   // Format thời gian
@@ -76,10 +84,12 @@ const PostCard = ({ post, onRefresh, onEdit, onDelete }) => {
     try {
       console.log(`💬 PostCard: handleCommentSubmit called with content: "${content}"`);
       console.log(`💬 PostCard: postId: ${post.id}, currentUser:`, currentUser);
+      console.log(`💬 PostCard: Comments before adding:`, comments);
 
       // Thêm comment và lấy comment data
       const newComment = await addComment(content);
       console.log(`💬 PostCard: Comment added successfully:`, newComment);
+      console.log(`💬 PostCard: Comments after adding:`, comments);
 
       // Hiển thị thông báo thành công
       message.success("Bình luận thành công!");
@@ -289,6 +299,15 @@ const PostCard = ({ post, onRefresh, onEdit, onDelete }) => {
             {/* Comments List */}
             <CommentList
               postId={post.id}
+              comments={comments}
+              loading={loading}
+              error={error}
+              hasMore={hasMore}
+              fetchComments={fetchComments}
+              addComment={addComment}
+              updateCommentById={updateCommentById}
+              deleteCommentById={deleteCommentById}
+              loadMoreComments={loadMoreComments}
               onRefresh={onRefresh}
             />
           </div>
