@@ -1,42 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Spin } from 'antd';
-import { isAuthenticated } from '../utils/tokenUtils';
-import { checkToken } from '../services/authService';
+import { useUser } from '../contexts/UserContext';
 
 const ProtectedRoute = ({ children }) => {
-    const [isValidating, setIsValidating] = useState(true);
-    const [isValid, setIsValid] = useState(false);
+    const { currentUser, loading, isAuthenticated } = useUser();
     const location = useLocation();
 
-    useEffect(() => {
-        const validateToken = async () => {
-            if (!isAuthenticated()) {
-                setIsValidating(false);
-                setIsValid(false);
-                return;
-            }
-
-            try {
-                const isValidToken = await checkToken();
-                setIsValid(isValidToken);
-            } catch (error) {
-                console.error('Token validation error:', error);
-                setIsValid(false);
-            } finally {
-                setIsValidating(false);
-            }
-        };
-
-        validateToken();
-    }, []);
-
-    if (isValidating) {
+    if (loading) {
         return (
             <div style={{
                 display: 'flex',
                 justifyContent: 'center',
-                alignItems: 'center',
                 height: '100vh'
             }}>
                 <Spin size="large" />
@@ -44,7 +19,7 @@ const ProtectedRoute = ({ children }) => {
         );
     }
 
-    if (!isValid) {
+    if (!isAuthenticated) {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 

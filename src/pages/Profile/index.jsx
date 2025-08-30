@@ -29,31 +29,25 @@ import {
   PictureOutlined,
 } from "@ant-design/icons";
 import { ProfileHeader, ProfilePostCard } from "./components";
+import { useUser } from "../../contexts/UserContext";
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
 const Profile = () => {
   const [activeTab, setActiveTab] = useState("posts");
+  const { currentUser, loading } = useUser();
 
-  // Mock data
-  const user = {
-    name: "Nguyễn Văn A",
-    username: "@nguyenvana",
-    bio: "Lập trình viên React, yêu thích công nghệ và âm nhạc. Luôn tìm kiếm những điều mới mẻ trong cuộc sống.",
-    email: "nguyenvana@email.com",
-    phone: "0123456789",
-    address: "Hà Nội, Việt Nam",
-    birthday: "15/03/1995",
-    joinDate: "Tháng 3, 2020",
-    posts: 156,
-    friends: 342,
-    photos: 89,
-    coverPhoto:
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=300&fit=crop",
-    avatar:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face",
-  };
+  // Sử dụng thông tin user thật từ context
+  const user = currentUser ? {
+    name: `${currentUser.firstName} ${currentUser.lastName}`,
+    email: currentUser.email,
+    phone: currentUser.phone,
+    address: currentUser.address,
+    dateOfBirth: currentUser.dateOfBirth,
+    gender: currentUser.gender,
+    profilePictureUrl: currentUser.profilePictureUrl,
+  } : null;
 
   const posts = [
     {
@@ -144,6 +138,36 @@ const Profile = () => {
     </List.Item>
   );
 
+  // Loading state
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        background: "#f5f5f5"
+      }}>
+        <div>Đang tải thông tin profile...</div>
+      </div>
+    );
+  }
+
+  // Kiểm tra user
+  if (!user) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        background: "#f5f5f5"
+      }}>
+        <div>Không tìm thấy thông tin người dùng</div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ background: "#f5f5f5", minHeight: "100vh" }}>
       <div style={{ maxWidth: "60%", width: "100%", margin: "0 auto" }}>
@@ -175,30 +199,41 @@ const Profile = () => {
                 key="info"
               >
                 <Descriptions column={1} bordered>
+                  <Descriptions.Item label="Họ và tên">
+                    {user.name}
+                  </Descriptions.Item>
                   <Descriptions.Item label="Email" icon={<MailOutlined />}>
                     {user.email}
                   </Descriptions.Item>
-                  <Descriptions.Item
-                    label="Số điện thoại"
-                    icon={<PhoneOutlined />}
-                  >
-                    {user.phone}
-                  </Descriptions.Item>
-                  <Descriptions.Item
-                    label="Địa chỉ"
-                    icon={<EnvironmentOutlined />}
-                  >
-                    {user.address}
-                  </Descriptions.Item>
-                  <Descriptions.Item
-                    label="Ngày sinh"
-                    icon={<CalendarOutlined />}
-                  >
-                    {user.birthday}
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Tham gia">
-                    {user.joinDate}
-                  </Descriptions.Item>
+                  {user.phone && (
+                    <Descriptions.Item
+                      label="Số điện thoại"
+                      icon={<PhoneOutlined />}
+                    >
+                      {user.phone}
+                    </Descriptions.Item>
+                  )}
+                  {user.address && (
+                    <Descriptions.Item
+                      label="Địa chỉ"
+                      icon={<EnvironmentOutlined />}
+                    >
+                      {user.address}
+                    </Descriptions.Item>
+                  )}
+                  {user.dateOfBirth && (
+                    <Descriptions.Item
+                      label="Ngày sinh"
+                      icon={<CalendarOutlined />}
+                    >
+                      {new Date(user.dateOfBirth).toLocaleDateString('vi-VN')}
+                    </Descriptions.Item>
+                  )}
+                  {user.gender && (
+                    <Descriptions.Item label="Giới tính">
+                      {user.gender === 'MALE' ? 'Nam' : user.gender === 'FEMALE' ? 'Nữ' : 'Khác'}
+                    </Descriptions.Item>
+                  )}
                 </Descriptions>
               </TabPane>
 

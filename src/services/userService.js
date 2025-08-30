@@ -61,3 +61,20 @@ export const updateProfile = async (profileData) => {
     // Theo API spec: response.data chứa UserResponseDto
     return response.data;
 };
+
+// Upload ảnh đại diện
+export const uploadProfilePicture = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await apiCall('/users/profile-picture', {
+        method: 'POST',
+        headers: {
+            ...getAuthHeader(),
+        },
+        body: formData,
+    });
+
+    // Theo API spec: response.data chứa UserResponseDto
+    return response.data;
+};

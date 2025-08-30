@@ -14,6 +14,8 @@ import {
   LogoutOutlined,
 } from "@ant-design/icons";
 import { logout } from "../../services/authService";
+import { useUser } from "../../contexts/UserContext";
+import { getMediaUrl } from "../../services/apiConfig";
 
 const { Header, Sider, Content } = Layout;
 const { Search } = Input;
@@ -21,6 +23,7 @@ const { Search } = Input;
 const MainLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { currentUser, clearCurrentUser } = useUser();
 
   const leftMenuItems = [
     {
@@ -51,9 +54,11 @@ const MainLayout = () => {
   const handleLogout = async () => {
     try {
       await logout();
+      clearCurrentUser(); // Xóa thông tin user khỏi context
       navigate("/login");
     } catch (error) {
       console.error("Lỗi khi đăng xuất:", error);
+      clearCurrentUser(); // Vẫn xóa thông tin user
       // Vẫn redirect về login ngay cả khi có lỗi
       navigate("/login");
     }
@@ -115,28 +120,36 @@ const MainLayout = () => {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <Badge count={3}>
-            <MessageOutlined
-              style={{ fontSize: "20px", cursor: "pointer" }}
-              onClick={() => navigate("/messages")}
-            />
-          </Badge>
-          <Badge count={5}>
-            <BellOutlined
-              style={{ fontSize: "20px", cursor: "pointer" }}
-              onClick={handleNotificationClick}
-            />
-          </Badge>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px", marginRight: "48px" }}>
+            <Badge count={3}>
+              <MessageOutlined
+                style={{ fontSize: "20px", cursor: "pointer" }}
+                onClick={() => navigate("/messages")}
+              />
+            </Badge>
+            <Badge count={5}>
+              <BellOutlined
+                style={{ fontSize: "20px", cursor: "pointer" }}
+                onClick={handleNotificationClick}
+              />
+            </Badge>
+          </div>
           <Dropdown
             menu={{ items: userMenuItems }}
             placement="bottomRight"
             trigger={["click"]}
           >
-            <Avatar
-              size="large"
-              icon={<UserOutlined />}
-              style={{ cursor: "pointer" }}
-            />
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+              <span style={{ fontWeight: "500", color: "#333" }}>
+                {currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : "Người dùng"}
+              </span>
+              <Avatar
+                size="large"
+                src={currentUser?.profilePictureUrl ? getMediaUrl(currentUser.profilePictureUrl) : undefined}
+                icon={!currentUser?.profilePictureUrl ? <UserOutlined /> : null}
+              />
+
+            </div>
           </Dropdown>
         </div>
       </Header>

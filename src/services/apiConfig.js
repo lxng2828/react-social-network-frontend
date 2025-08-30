@@ -1,5 +1,5 @@
-const API_BASE_URL = 'http://localhost:8080/api';
-
+export const API_BASE_URL = 'http://localhost:8080/api';
+export const MEDIA_BASE_URL = 'http://localhost:8080';
 // Helper function để gọi API
 export const apiCall = async (endpoint, options = {}) => {
     const url = `${API_BASE_URL}${endpoint}`;
@@ -30,4 +30,9 @@ export const apiCall = async (endpoint, options = {}) => {
 export const getAuthHeader = () => {
     const token = localStorage.getItem('jwt_token');
     return token ? { 'Authorization': `Bearer ${token}` } : {};
+};
+
+
+export const getMediaUrl = (path) => {
+    return `${MEDIA_BASE_URL}${path}`;
 };

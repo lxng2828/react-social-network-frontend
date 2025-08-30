@@ -11,7 +11,16 @@ export const login = async (email, password) => {
     // Theo API spec: response.data chứa LoginResponse
     if (response.success && response.data && response.data.token) {
         setToken(response.data.token);
-        return response.data;
+
+        // Lấy thông tin user ngay sau khi đăng nhập
+        try {
+            const userData = await getCurrentUser();
+            return { ...response.data, user: userData };
+        } catch (error) {
+            console.error('Lỗi khi lấy thông tin user:', error);
+            // Vẫn trả về response nếu không lấy được user info
+            return response.data;
+        }
     }
 
     throw new Error('Đăng nhập thất bại');
