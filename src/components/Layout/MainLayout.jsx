@@ -231,7 +231,7 @@ const MainLayout = () => {
           }}
         >
           <div style={{ padding: "24px" }}>
-            <h3>Bạn bè đang online</h3>
+            <h3>Bạn bè của tôi</h3>
             <div style={{ marginBottom: "24px" }}>
               <div
                 style={{
