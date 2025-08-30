@@ -56,7 +56,15 @@ const ProfilePostCard = ({ post, onRefresh, onEdit, onDelete }) => {
   // Sử dụng useComments hook
   const {
     addComment,
-    refreshComments
+    refreshComments,
+    comments,
+    loading,
+    error,
+    hasMore,
+    fetchComments,
+    updateCommentById,
+    deleteCommentById,
+    loadMoreComments
   } = useComments(post.id);
 
   // Format thời gian
@@ -289,6 +297,15 @@ const ProfilePostCard = ({ post, onRefresh, onEdit, onDelete }) => {
             {/* Comments List */}
             <CommentList
               postId={post.id}
+              comments={comments}
+              loading={loading}
+              error={error}
+              hasMore={hasMore}
+              fetchComments={fetchComments}
+              addComment={addComment}
+              updateCommentById={updateCommentById}
+              deleteCommentById={deleteCommentById}
+              loadMoreComments={loadMoreComments}
               onRefresh={onRefresh}
             />
           </div>

@@ -19,20 +19,34 @@ import { getMediaUrl } from "../../utils/mediaUtils";
 const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
-const CommentList = ({ postId, onRefresh }) => {
+const CommentList = ({
+    postId,
+    comments = [],
+    loading = false,
+    error = null,
+    hasMore = false,
+    fetchComments,
+    addComment,
+    updateCommentById,
+    deleteCommentById,
+    loadMoreComments,
+    onRefresh
+}) => {
     const { currentUser } = useUser();
     const navigate = useNavigate();
-    const {
-        comments,
-        loading,
-        error,
-        hasMore,
-        fetchComments,
-        addComment,
-        updateCommentById,
-        deleteCommentById,
-        loadMoreComments
-    } = useComments(postId);
+
+    // Không cần useComments hook nữa vì đã nhận từ props
+    // const {
+    //     comments,
+    //     loading,
+    //     error,
+    //     hasMore,
+    //     fetchComments,
+    //     addComment,
+    //     updateCommentById,
+    //     deleteCommentById,
+    //     loadMoreComments
+    // } = useComments(postId);
 
     // Xử lý click vào tên để chuyển trang cá nhân
     const handleNameClick = (userId) => {
@@ -60,9 +74,21 @@ const CommentList = ({ postId, onRefresh }) => {
     // Lấy comments khi component mount
     useEffect(() => {
         if (postId) {
-            fetchComments(0);
+            console.log(`📋 CommentList: Component mounted, postId: ${postId}`);
+            console.log(`📋 CommentList: Initial comments:`, comments);
+            console.log(`📋 CommentList: fetchComments function:`, fetchComments);
+
+            if (fetchComments) {
+                fetchComments(0);
+            }
         }
     }, [postId, fetchComments]);
+
+    // Debug log khi comments thay đổi
+    useEffect(() => {
+        console.log(`📋 CommentList: Comments updated:`, comments);
+        console.log(`📋 CommentList: Comments count:`, comments.length);
+    }, [comments]);
 
     // Lấy replies cho comment
     const fetchReplies = async (commentId) => {
